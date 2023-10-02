@@ -80,7 +80,29 @@ def create_song():
     id = data["id"]
     s = db.songs.find_one({"id":int(id)})
     if s:
-        return jsonify(dict(message=f"song with id {id} already present"))
+        return jsonify(dict(message=f"song with id {id} already present")), 302
     else:
         db.songs.insert_one(data)
         return {"inserted id":parse_json(data)}, 201
+
+@app.route("/song/<int:id>", methods=["PUT"])
+def update_song(id):
+    s = db.songs.find_one({"id":int(id)})
+    if s:
+        data = request.get_json()
+        res:UpdateResult = db.songs.update_one({"id": int(id)}, {"$set": data})
+        if res.raw_result["nModified"] != 0:
+            return data, 201
+        else:
+            return {"message":"song found, but nothing updated"}
+    else:
+        return jsonify(dict(message=f"song with id {id} not found")), 404
+
+@app.route("/song/<int:id>", methods=["DELETE"])
+def delete_song(id):
+    s = db.songs.find_one({"id":int(id)})
+    if s:
+        res = db.songs.delete_one({"id":int(id)})
+        return res.raw_result, 204
+    else:
+        return jsonify(dict(message="song not found")), 404
