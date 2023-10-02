@@ -61,7 +61,26 @@ def count():
     c = db.songs.count_documents({})
     return jsonify(dict(count=c)), 200
 
-@app.route("/song")
+@app.route("/song", methods=["GET"])
 def song():
     s:list = list(db.songs.find({}))
     return {"song":parse_json(s)}, 200
+
+@app.route("/song/<id>", methods=["GET"])
+def get_song_by_id(id):
+    s = db.songs.find_one({"id":int(id)})
+    if s:
+        return parse_json(s), 200
+    else:
+        return jsonify(dict(messge="song with id not found")), 404
+
+@app.route("/song", methods=["POST"])
+def create_song():
+    data = request.get_json()
+    id = data["id"]
+    s = db.songs.find_one({"id":int(id)})
+    if s:
+        return jsonify(dict(message=f"song with id {id} already present"))
+    else:
+        db.songs.insert_one(data)
+        return {"inserted id":parse_json(data)}, 201
